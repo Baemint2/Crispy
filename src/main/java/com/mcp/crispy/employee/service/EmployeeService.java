@@ -112,13 +112,9 @@ public class EmployeeService {
     @Transactional
     public void updateAddress(EmpAddressUpdateDto employeeUpdateDto, Integer modifier) {
         int empNo = employeeUpdateDto.getEmpNo();
-        int count = employeeMapper.countByEmpNo(empNo);
 
-        if (count > 0) {
-            employeeMapper.updateAddress(employeeUpdateDto, modifier);
-        } else {
-            throw new UsernameNotFoundException("직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateAddress(employeeUpdateDto, modifier);
     }
 
 
@@ -127,7 +123,6 @@ public class EmployeeService {
     public void updateEmpSign(EmployeeUpdateDto employeeUpdateDto) {
         String signData = employeeUpdateDto.getEmpSign();
         int empNo = employeeUpdateDto.getEmpNo();
-        int count = employeeMapper.countByEmpNo(empNo);
         if (signData != null && !signData.isEmpty()) {
             try {
                 String fileName = imageService.storeSignatureImage(signData, empNo);
@@ -138,87 +133,58 @@ public class EmployeeService {
             }
         }
 
-        if (count > 0) {
-            employeeMapper.updateEmpSign(employeeUpdateDto);
-        } else {
-            throw new UsernameNotFoundException("직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateEmpSign(employeeUpdateDto);
     }
 
     public void updateEmpProfile(Integer empNo,
                                  MultipartFile file, Integer modifier) throws IOException {
-        int count = employeeMapper.countByEmpNo(empNo);
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("프로필 이미지 파일이 없습니다.");
         } else {
             String storedProfileImage = imageService.storeProfileImage(file);
             String storedUrl = "/profiles/" + storedProfileImage;
 
-            if (count > 0) {
-                employeeMapper.updateEmpProfile(storedUrl, empNo, modifier);
-            } else {
-                throw new UsernameNotFoundException("직원이 존재하지 않습니다.");
-            }
+            employeeExists(empNo);
+            employeeMapper.updateEmpProfile(storedUrl, empNo, modifier);
         }
     }
 
     // 전화번호 업데이트
     @Transactional
     public void changeEmpPhone(String empPhone, Integer empNo, Integer modifier) {
-        int count = employeeMapper.countByEmpNo(empNo);
-        if (count > 0) {
-            employeeMapper.updateEmpPhone(empPhone, empNo, modifier);
-        } else {
-            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateEmpPhone(empPhone, empNo, modifier);
     }
 
     // 이름 업데이트
     @Transactional
     public void changeEmpName(String empName, Integer empNo, Integer modifier) {
         log.info("changeEmpName: {} {}", empName, empNo);
-        int count = employeeMapper.countByEmpNo(empNo);
-        if (count > 0) {
-            employeeMapper.updateEmpName(empName, empNo, modifier);
-            ownerNameService.updateFrnOwnerIfEmployee(empNo, empName, modifier);
-        } else {
-            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateEmpName(empName, empNo, modifier);
+        ownerNameService.updateFrnOwnerIfEmployee(empNo, empName, modifier);
     }
 
     // 직책 변경
     @Transactional
     public void changePosNo(Integer posNo, Integer empNo, Integer modifier) {
-        int count = employeeMapper.countByEmpNo(empNo);
-        if (count > 0) {
-            employeeMapper.updatePosNo(Position.of(posNo), empNo, modifier);
-        } else {
-            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
-        }
-
+        employeeExists(empNo);
+        employeeMapper.updatePosNo(Position.of(posNo), empNo, modifier);
     }
 
     // 이메일 변경
     @Transactional
     public void changeEmail(String email, Integer empNo, Integer modifier) {
-        int count = employeeMapper.countByEmpNo(empNo);
-        log.info("changeEmail: {}", count);
-        if (count > 0) {
-            employeeMapper.updateEmpEmail(email, empNo, modifier);
-        } else {
-            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateEmpEmail(email, empNo, modifier);
     }
 
     // 재직 상태 변경
     @Transactional
     public void changeEmpStat(Integer empStat, Integer empNo, Integer modifier) {
-        int count = employeeMapper.countByEmpNo(empNo);
-        if (count > 0) {
-            employeeMapper.updateEmpStat(EmpStatus.of(empStat), empNo, modifier);
-        } else {
-            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
-        }
+        employeeExists(empNo);
+        employeeMapper.updateEmpStat(EmpStatus.of(empStat), empNo, modifier);
     }
 
     // 사용자 초대 검색 메소드
@@ -258,7 +224,6 @@ public class EmployeeService {
     // 로그아웃시 리프레시 토큰 삭제
     @Transactional
     public void removeRefreshToken(int empNo) {
-
         employeeMapper.removeRefreshToken(empNo);
     }
     
@@ -266,6 +231,14 @@ public class EmployeeService {
     @Transactional
     public void updateAnnual(EmployeeDto empDto) {
     	employeeMapper.updateAnnual(empDto);
+    }
+
+    // 직원이 존재하는지 여부
+    private void employeeExists(Integer empNo) {
+        int count = employeeMapper.countByEmpNo(empNo);
+        if (count <= 0) {
+            throw new IllegalArgumentException("해당하는 직원이 존재하지 않습니다.");
+        }
     }
 
 }
