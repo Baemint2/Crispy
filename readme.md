@@ -73,7 +73,7 @@
 ## ERD
 ![Copy of CRISPY (배영욱) (1)](https://github.com/user-attachments/assets/5421d506-1b35-4907-932b-b65cc3049b17)
 ## 폴더 구조
-📦 Crispy
+```📦 Crispy
 ├── 📁 src/main
 │   ├── 📁 java/com/mcp/crispy
 │   │   ├── 📁 admin
@@ -126,3 +126,4 @@
 │       └── jwt.properties
 ├── build.gradle
 └── README.md
+```
