@@ -72,7 +72,8 @@
 ## ERD
 ![Copy of CRISPY (배영욱) (1)](https://github.com/user-attachments/assets/cc2ead3a-4f2a-4110-bd5e-bbea7db14480)
 ## 폴더 구조
-```📦 Crispy
+```
+📦 Crispy
 ├── 📁 src/main
 │   ├── 📁 java/com/mcp/crispy
 │   │   ├── 📁 admin
