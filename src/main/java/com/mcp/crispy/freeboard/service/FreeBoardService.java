@@ -260,7 +260,6 @@ public class FreeBoardService {
             response.addCookie(hitCookie);
         }
 
-        log.info("Increased board hit for boardNo: {} {}", boardNo, board.getBoardHit());
     }
 
     // 현재 시간부터 자정까지 남은 초 계산
