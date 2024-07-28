@@ -262,18 +262,7 @@ public class ApprovalService {
 
             if (allApproved) {
                 // 모든 결재자가 승인한 경우 최종 승인 알림 전송
-                int creatorEmpNo = detailApprLine.get(0).getCreator();
-                log.info("creatorEmpNo: {}", creatorEmpNo);
-                NotifyDto notifyDtoFinal = NotifyDto.builder()
-                        .notifyCt(NotifyCt.APPROVAL)
-                        .notifyContent("결재가 승인 되었습니다.")
-                        .apprType("approval")
-                        .timeOffType("final")
-                        .documentType(apprType) // 문서 타입 추가
-                        .build();
-                notificationService.sendApprovalNotification(notifyDtoFinal, creatorEmpNo);
-                approvalDetail.setApprStat(ApprStat.APPROVING.getCode());
-                approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo()); // DB 업데이트
+                finalNotifyRequest(detailApprLine, apprType, approvalDetail);
             } else {
                 // 결재자가 여러명인 경우 다음 결재자에게 알림 전송
                 ApprLineDto nextApprLineDto = detailApprLine.stream()
@@ -281,23 +270,10 @@ public class ApprovalService {
                         .findFirst()
                         .orElse(null);
 
+                // 다음 결재자가 존재하면 알림 전송
                 if (nextApprLineDto != null) {
-                    log.info("nextApprLineDto: {}", nextApprLineDto);
-                    EmployeeDto employee = employeeService.getEmployeeDetailsByEmpNo(nextApprLineDto.getCreator());
-                    log.info("employee: {}", employee);
-                    NotifyDto notifyDto = NotifyDto.builder()
-                            .notifyCt(NotifyCt.APPROVAL)
-                            .notifyContent(employee.getEmpName() + "님이 " + notifyCt.getDescription() + "결재를 요청했습니다.") // creator
-                            .apprType("approval")
-                            .timeOffType("sign")
-                            .documentType(apprType) // 문서 타입 추가
-                            .build();
-
-                    log.info("changeApprLineStat: {}", notifyDto);
-                    notificationService.sendApprovalNotification(notifyDto, nextApprLineDto.getEmpNo());
-                    approvalDetail.setApprStat(ApprStat.ONGOING.getCode());
-                    approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo());
-                } else {
+                    nextApprLineNotify(nextApprLineDto, notifyCt, apprType, approvalDetail);
+                } else { // 다음 결재자가 존재하지 않을 시
                     log.warn("No pending approval lines found with apprLineStat = 0");
                 }
             }
@@ -305,19 +281,59 @@ public class ApprovalService {
 
         // 반려 시 결재 올린 직원에게 반려 알림 전송
         if (apprLineStat == 2) {
-            int creatorEmpNo = detailApprLine.get(0).getCreator();
-            NotifyDto notifyDto = NotifyDto.builder()
-                    .notifyCt(NotifyCt.REJECTION)
-                    .notifyContent("결재가 반려되었습니다.")
-                    .apprType("rejection")
-                    .timeOffType("rejected")
-                    .documentType(apprType) // 문서 타입 추가
-                    .build();
-            notificationService.sendApprovalNotification(notifyDto, creatorEmpNo);
-            approvalDetail.setApprStat(ApprStat.RETURNING.getCode());
-            approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo()); // DB 업데이트
+            rejectionNotify(detailApprLine, apprType, approvalDetail);
         }
         return result;
+    }
+
+    // 반려 메서드
+    private void rejectionNotify(List<ApprLineDto> detailApprLine, String apprType, ApprovalDto approvalDetail) {
+        int creatorEmpNo = detailApprLine.get(0).getCreator();
+        NotifyDto notifyDto = NotifyDto.builder()
+                .notifyCt(NotifyCt.REJECTION)
+                .notifyContent("결재가 반려되었습니다.")
+                .apprType("rejection")
+                .timeOffType("rejected")
+                .documentType(apprType) // 문서 타입 추가
+                .build();
+        notificationService.sendApprovalNotification(notifyDto, creatorEmpNo);
+        approvalDetail.setApprStat(ApprStat.RETURNING.getCode());
+        approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo()); // DB 업데이트
+    }
+
+    //모든 결재자가 승인한 경우 최종 승인 알림 전송 메서드
+    private void finalNotifyRequest(List<ApprLineDto> detailApprLine, String apprType, ApprovalDto approvalDetail) {
+        int creatorEmpNo = detailApprLine.get(0).getCreator();
+        log.info("creatorEmpNo: {}", creatorEmpNo);
+        NotifyDto notifyDtoFinal = NotifyDto.builder()
+                .notifyCt(NotifyCt.APPROVAL)
+                .notifyContent("결재가 승인 되었습니다.")
+                .apprType("approval")
+                .timeOffType("final")
+                .documentType(apprType) // 문서 타입 추가
+                .build();
+        notificationService.sendApprovalNotification(notifyDtoFinal, creatorEmpNo);
+        approvalDetail.setApprStat(ApprStat.APPROVING.getCode());
+        approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo()); // DB 업데이트
+    }
+
+    // 다음 결재자에게 알림 전송하는 메서드
+    private void nextApprLineNotify(ApprLineDto nextApprLineDto, NotifyCt notifyCt, String apprType, ApprovalDto approvalDetail) {
+        log.info("nextApprLineDto: {}", nextApprLineDto);
+        EmployeeDto employee = employeeService.getEmployeeDetailsByEmpNo(nextApprLineDto.getCreator());
+        log.info("employee: {}", employee);
+        NotifyDto notifyDto = NotifyDto.builder()
+                .notifyCt(NotifyCt.APPROVAL)
+                .notifyContent(employee.getEmpName() + "님이 " + notifyCt.getDescription() + "결재를 요청했습니다.") // creator
+                .apprType("approval")
+                .timeOffType("sign")
+                .documentType(apprType) // 문서 타입 추가
+                .build();
+
+        log.info("changeApprLineStat: {}", notifyDto);
+        notificationService.sendApprovalNotification(notifyDto, nextApprLineDto.getEmpNo());
+        approvalDetail.setApprStat(ApprStat.ONGOING.getCode());
+        approvalMapper.updateApprovalStat(approvalDetail.getApprStat(), approvalDetail.getApprNo());
     }
 
 }

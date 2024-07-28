@@ -124,6 +124,13 @@ public class StockService {
         stockMapper.insertApprLine(apprLineDto);
 
         // 결재자에게 알림 전송
+        notifyApprovalRequest(approvalDto);
+
+        return 1;
+
+    }
+
+    private void notifyApprovalRequest(ApprovalDto approvalDto) {
         FranchiseDto frn = franchiseService.getFrnByEmpNo(approvalDto.getEmpNo());
         NotifyCt notifyCt = NotifyCt.ORDER;
         NotifyDto notifyDto = NotifyDto.builder()
@@ -136,9 +143,6 @@ public class StockService {
 
         // 알림 전송
         notificationService.sendApprovalNotification(notifyDto, ADMIN_NO);
-
-        return 1;
-
     }
 
     // 발주 신청 목록 조회 (가맹점주, 관리자)
