@@ -29,7 +29,6 @@ public class EmployeeService {
     private final EmailService emailService;
     private final OwnerNameService ownerNameService;
     private final ImageService imageService;
-    @Lazy
     private final PasswordEncoder passwordEncoder;
     private final PasswordChangeValidator passwordChangeValidator;
     private final NewPasswordValidator newPasswordValidator;

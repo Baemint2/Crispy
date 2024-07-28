@@ -17,6 +17,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -30,19 +31,20 @@ public class SecurityConfig {
 	private final AuthenticationConfiguration authenticationConfiguration;
 	private final JwtAuthorizationFilter jwtAuthorizationFilter;
 	private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
-	private final EmployeeService employeeService;
-	@Lazy
-	private final AuthenticationService authenticationService;
-	private final PasswordEncoder passwordEncoder;
 
 	@Bean
 	public AuthenticationManager authenticationManager() throws Exception {
 		return authenticationConfiguration.getAuthenticationManager();
 	}
 
+	@Bean
+	public PasswordEncoder passwordEncoder() {
+		return new Argon2PasswordEncoder(16, 32, 4, 512, 5);
+	}
+
 
 	@Bean
-	SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	SecurityFilterChain filterChain(HttpSecurity http, EmployeeService employeeService, AuthenticationService authenticationService) throws Exception {
 		http
 				.cors(AbstractHttpConfigurer::disable)
 				.csrf(AbstractHttpConfigurer::disable) // _csrf

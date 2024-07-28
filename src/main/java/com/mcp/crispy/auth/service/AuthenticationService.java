@@ -24,7 +24,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AuthenticationService {
     private final CrispyUserDetailsService crispyUserDetailsService;
-    @Lazy
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final EmployeeService employeeService;
